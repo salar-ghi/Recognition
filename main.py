@@ -69,14 +69,14 @@ class FaceRecognition():
     def run_recognition(self):
         # torch.set_default_device("cuda:0")
         # cam = cv2.VideoCapture(0, cv2.CAP_GSTREAMER)
-        cam = cv2.VideoCapture(0, cv2.CAP_PROP_BUFFERSIZE)
+        cam = cv2.VideoCapture(Localurl)
         cam.set(cv2.CAP_PROP_BUFFERSIZE, 2)
         cam.set(cv2.CAP_GSTREAMER,1)
         cam.set(cv2.CAP_PROP_FOURCC ,cv2.VideoWriter_fourcc(*'MJPG'))
         cam.set(cv2.CAP_PROP_FRAME_WIDTH, resolutions[1][0])
         cam.set(cv2.CAP_PROP_FRAME_HEIGHT, resolutions[1][1])
         cam.set(cv2.CAP_PROP_POS_AVI_RATIO, 1)
-        cam.set(cv2.CAP_PROP_FPS, 10)
+        cam.set(cv2.CAP_PROP_FPS, 10.0)
         cam.set(cv2.CAP_PROP_FRAME_COUNT,1)
         cam.set(cv2.CAP_PROP_POS_FRAMES,1)
         

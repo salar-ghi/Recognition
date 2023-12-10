@@ -4,15 +4,16 @@ import math
 import torch
 from threading import Thread
 from time import sleep
-os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"
-import face_recognition
-import cv2
 import asyncio
 import multiprocessing as mp
 from collections import deque
 import pickle
+os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"
+
 from cvzone.FaceDetectionModule import FaceDetector
+import face_recognition
 import cvzone
+import cv2
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 torch.set_default_device(device)
@@ -42,12 +43,9 @@ class camCapture:
         self.capture.set(cv2.CAP_PROP_FRAME_COUNT,1)
         self.capture.set(cv2.CAP_PROP_POS_FRAMES,1)
         
-        # p = mp.Process(target=self.queryframe, args=())
-        # p.start()
-        
-    def start(self):
-        t1 = Thread(target=self.queryframe,daemon=True ,args=())
+        t1 = Thread(target=self.queryframe, daemon=True, args=())
         t1.start()
+        
         
     def stop(self):
         self.isstop = True
@@ -58,18 +56,21 @@ class camCapture:
     def queryframe(self):
         while (not self.isstop):
             self.status, tmp = self.capture.read()
+            if not self.status:
+                break
             self.Frame.append(tmp)
 
         self.capture.release()
 
-
 def EncodeFiles():
+    print('start to decode file')
     file = open('EncodeFile.p', 'rb')
     encodeListKnownWithIds = pickle.load(file)
     file.close()
     return encodeListKnownWithIds
 
-encodeListKnown, EmployeeIds = EncodeFiles()
+
+
 
 def ResizeWithAspectRatio(image, width=None, height=None, inter=cv2.INTER_AREA):
     dim = None
@@ -88,8 +89,8 @@ def ResizeWithAspectRatio(image, width=None, height=None, inter=cv2.INTER_AREA):
     return cv2.resize(image, dim, interpolation=inter)
 
 def EncodeImg(source):
-    img = cv2.cvtColor(source, cv2.COLOR_BGR2RGB)
-    img = cv2.resize(img, (0, 0), 0.15, 0.15)
+    img = cv2.resize(source , (0, 0),None, 0.15, 0.15)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     faceCurFrame = face_recognition.face_locations(img)
     encodeCurFrame = face_recognition.face_encodings(img, faceCurFrame)
     for encodeFace, faceLoc in zip(encodeCurFrame, faceCurFrame):
@@ -99,16 +100,26 @@ def EncodeImg(source):
         if fceDis[mtchIndx] < 0.4 and mtchs[mtchIndx]:
             return EmployeeIds[mtchIndx]
 
+cam = camCapture(Localurl, buffer_size=2)
+sleep(0.030)
+encodeListKnown, EmployeeIds = EncodeFiles()
+
+class Detector:
+    def __init__(self):
+        print('start to get FaceDetector')
+        Thread(target=self.getDetector, args=()).start()
+
+    def getDetector(self):
+        return FaceDetector()
+
 
 def main():
     global x, y, w, h , x2
     
-    cam = camCapture(0, buffer_size=2)
-    cam.start()
-    
-    sleep(1)
-    detector = FaceDetector()
-            
+    # detector = Thread.threading(target=FaceDetector, args=()) 
+    detect = Detector()
+    # detector = FaceDetector()
+    detector = detect.getDetector()
     while True:
         frame = cam.getframe()
         frame, bboxs = detector.findFaces(frame)
@@ -128,6 +139,7 @@ def main():
         
         frm = ResizeWithAspectRatio(frame, width=1024)
         cv2.imshow("Real-time Detection", frm)
+        # cv2.waitKey(0)
         k = cv2.waitKey(30) & 0Xff
         if k == 27: # Press 'ESC' to quit
             cam.stop()
@@ -135,7 +147,15 @@ def main():
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-    main()
+    print('start process')
+    p = mp.Process(target=EncodeFiles, args=())    
+    p.start()
+    p.join()
+
+    print('start Thread')    
+    t3 = Thread(target=main, args=()) 
+    t3.start()
+    
     
     # t = Thread(target=fr.encode_faces, daemon=True, args=())
     # t.start()
