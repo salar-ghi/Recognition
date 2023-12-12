@@ -8,6 +8,7 @@ import asyncio
 import multiprocessing as mp
 from collections import deque
 import pickle
+from dataQuery import SqlQueries
 os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"
 
 from cvzone.FaceDetectionModule import FaceDetector
@@ -126,6 +127,14 @@ def main():
         for box in bboxs:
             emplyee = EncodeImg(frame)
             if emplyee is not None and emplyee is not int(0):
+                
+                ####################
+                query = SqlQueries(emplyee)
+                # query.CheckAttandance(emplyee)
+
+
+                ####################
+
                 x, y, w, h = box['bbox']
                 x2 = x + (int(w) / 2)
                 cvzone.putTextRect(frame, f'{emplyee}', (int(x2+45), y-10),2, 1, (0, 255, 25),(10, 10, 10, 0.1), cv2.BORDER_TRANSPARENT,1, 1)
