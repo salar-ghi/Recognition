@@ -29,6 +29,7 @@ resolutions = [[640, 480],[1024, 768],[1280, 704],[1920, 1088],[3840, 2144], [40
 class camCapture:
     def __init__(self, camID, buffer_size):
         torch.set_default_device("cuda:0")
+        # self.Frame = deque(maxlen=buffer_size)
         self.Frame = deque(maxlen=buffer_size)
         self.status = False
         self.isstop = False
@@ -52,7 +53,7 @@ class camCapture:
         self.isstop = True
 
     def getframe(self):
-        return self.Frame.pop()
+        return self.Frame.popleft()
 
     def queryframe(self):
         while (not self.isstop):
@@ -101,8 +102,8 @@ def EncodeImg(source):
         if fceDis[mtchIndx] < 0.4 and mtchs[mtchIndx]:
             return EmployeeIds[mtchIndx]
 
-cam = camCapture(Localurl, buffer_size=2)
-sleep(0.030)
+cam = camCapture(Localurl, buffer_size=10000)
+# sleep(0.030)
 encodeListKnown, EmployeeIds = EncodeFiles()
 
 class Detector:
