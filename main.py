@@ -1,13 +1,18 @@
-import face_recognition
 import os, sys
-import cv2
+os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"
 import numpy as np
 import math
 import torch
+import face_recognition
+import cv2
 
-# device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-# torch.set_default_device(device)
-# torch.device(device)
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;udp"
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;0"
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+torch.set_default_device(device)
+torch.device(device)
 
 
 
@@ -69,16 +74,19 @@ class FaceRecognition():
     def run_recognition(self):
         # torch.set_default_device("cuda:0")
         # cam = cv2.VideoCapture(0, cv2.CAP_GSTREAMER)
-        cam = cv2.VideoCapture(Localurl)
-        cam.set(cv2.CAP_PROP_BUFFERSIZE, 2)
+        cam = cv2.VideoCapture(Localurl, cv2.CAP_FFMPEG)
+        cam.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         cam.set(cv2.CAP_GSTREAMER,1)
+        cam.set(cv2.CAP_PROP_FOURCC ,cv2.VideoWriter.fourcc('M','J','P','G'))
         cam.set(cv2.CAP_PROP_FOURCC ,cv2.VideoWriter_fourcc(*'MJPG'))
         cam.set(cv2.CAP_PROP_FRAME_WIDTH, resolutions[0][0])
         cam.set(cv2.CAP_PROP_FRAME_HEIGHT, resolutions[0][1])
         cam.set(cv2.CAP_PROP_POS_AVI_RATIO, 1)
-        cam.set(cv2.CAP_PROP_FPS, 10.0)
+        cam.set(cv2.CAP_PROP_FPS, 5.0)
         cam.set(cv2.CAP_PROP_FRAME_COUNT,1)
-        cam.set(cv2.CAP_PROP_POS_FRAMES,1)
+        # cam.set(cv2.CAP_PROP_POS_FRAMES,1)
+        cam.set(cv2.CAP_PROP_EXPOSURE, -5)
+
         
         if not cam.isOpened():
             sys.exit('video source not found...')
@@ -125,7 +133,7 @@ class FaceRecognition():
                 
             # frm = ResizeWithAspectRatio(frame, width=1280)
             cv2.imshow('Face REcognition', frame)
-            cv2.waitKey(1)
+            # cv2.waitKey(1)
             if cv2.waitKey(1) == ord('q'):
                 break
             

@@ -114,6 +114,16 @@ class Detector:
     def getDetector(self):
         return FaceDetector()
 
+imgBackground = cv2.imread('assets/background.png')
+folderModePath = 'assets/Modes'
+modePathList = os.listdir(folderModePath)
+imgModeList = []
+for path in modePathList:
+    imgModeList.append(cv2.imread(os.path.join(folderModePath, path)))
+
+def rescale_frame(frame):
+    dim = (640, 480)
+    return cv2.resize(frame, dim, interpolation =cv2.INTER_AREA)
 
 def main():
     global x, y, w, h , x2
@@ -131,7 +141,7 @@ def main():
                 
                 ####################
                 query = SqlQueries(emplyee)
-                # query.CheckAttandance(emplyee)
+                query.CheckAttandance(emplyee)
 
 
                 ####################
@@ -147,8 +157,11 @@ def main():
                 cvzone.putTextRect(frame, f'{txt}', (int(x3+15), y1-15),2, 1, (0, 0, 255),(255, 255, 255, 0.9), cv2.BORDER_TRANSPARENT,1, 1)
                 cvzone.cornerRect(frame, (x1, y1, w1, h1))
         
-        frm = ResizeWithAspectRatio(frame, width=1024)
-        cv2.imshow("Real-time Detection", frm)
+        # img = ResizeWithAspectRatio(frame, width=640)
+        img = rescale_frame(frame)
+        imgBackground[162:162+480, 55:55+640] = img
+        imgBackground[44:44 + 633, 808:808 + 414] = imgModeList[3]
+        cv2.imshow("Real-time Detection", imgBackground)
         # cv2.waitKey(0)
         k = cv2.waitKey(30) & 0Xff
         if k == 27: # Press 'ESC' to quit

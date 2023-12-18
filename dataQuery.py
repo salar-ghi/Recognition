@@ -103,9 +103,7 @@ class SqlQueries:
         self.cursor.execute('Exec CheckAttendance @UserId=?', int(userId))
         data = self.cursor.fetchval()
         self.conn.commit()
-        # self.cursor.close()
-        self.closeDBConnection()
-        print(data)
+        self.cursor.close()
         return data
     
     def ReadBulkQuery(self):
