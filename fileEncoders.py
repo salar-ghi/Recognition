@@ -2,7 +2,6 @@ import pickle
 import os
 import face_recognition
 import cv2
-from numba import jit, cuda, njit, numba
 import torch
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -14,8 +13,6 @@ pathList = os.listdir(folderPath)
 
 imgList = []
 EmployeeIds = []
-
-
 for item in pathList:
     imgList.append(cv2.imread(os.path.join(folderPath, item)))
     EmployeeIds.append(os.path.splitext(item)[0])

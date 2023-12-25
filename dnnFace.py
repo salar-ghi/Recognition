@@ -19,6 +19,7 @@ import cv2
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 torch.set_default_device(device)
 torch.device(device)
+dtype = torch.float32
 
 rtspurl = 'rtsp://admin:ndcndc@192.168.10.226:554/channel1'
 Localurl = 'rtsp://admin:admin4763@192.168.5.190:554/'
@@ -53,7 +54,7 @@ class camCapture:
         self.isstop = True
 
     def getframe(self):
-        return self.Frame.popleft()
+        return self.Frame.pop()
 
     def queryframe(self):
         while (not self.isstop):
@@ -112,7 +113,7 @@ class Detector:
         Thread(target=self.getDetector, args=()).start()
 
     def getDetector(self):
-        return FaceDetector()
+        return FaceDetector().to(device, dtype)
 
 imgBackground = cv2.imread('assets/background.png')
 folderModePath = 'assets/Modes'
