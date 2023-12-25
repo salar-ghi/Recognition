@@ -2,3 +2,4 @@ env/
 faces/
 env.rar/
 EncodeFile.csv/
+__pycache__/dataQuery.cpython-311.pyc

@@ -142,7 +142,7 @@ def main():
                 
                 ####################
                 query = SqlQueries(emplyee)
-                query.CheckAttandance(emplyee)
+                result = query.CheckAttandance(emplyee)
 
 
                 ####################

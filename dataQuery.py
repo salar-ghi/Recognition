@@ -15,7 +15,7 @@ class SqlQueries:
         self.cursor = self.conn.cursor()
         self.User = userId
         
-        Thread(target=self.CheckAttandance, daemon=True ,args=(self.User)).start()
+        # Thread(target=self.CheckAttandance, daemon=True ,args=(self.User)).start()
 
     def connection(self):
         return pyodbc.connect('Driver={SQL Server};'
@@ -48,7 +48,7 @@ class SqlQueries:
         print(row)
         return row
         
-    def existQuery(self, userId):
+    def existQuery(self):
         self.cursor.execute(
             '''
                 declare @Result  int = 0
@@ -91,16 +91,17 @@ class SqlQueries:
                         set @Result = 1
                     end
                 select @Result
-            ''', int(userId), int(userId), int(userId), int(userId), int(userId), int(userId), int(userId)
+            ''', int(self.User), int(self.User), int(self.User), int(self.User), int(self.User), int(self.User), int(self.User)
         ).commit()
         rows = self.cursor.fetchall()
         self.cursor.close()
         for row in rows:
-            print(row)
-        # return row
+            # print(row)
+            return row
 
-    def CheckAttandance(self, userId):
-        self.cursor.execute('Exec CheckAttendance @UserId=?', int(userId))
+    def CheckAttandance(self):
+        # print('data query', self.User)
+        self.cursor.execute('Exec CheckAttendance @UserId=?', int(self.User))
         data = self.cursor.fetchval()
         self.conn.commit()
         self.cursor.close()
@@ -128,6 +129,9 @@ class SqlQueries:
         except pyodbc.ProgrammingError: 
             pass 
 
+
+
 if __name__=='__main__':
     sql = SqlQueries()
+    sql.CheckAttandance()
     # sql.CheckAttandance(813)

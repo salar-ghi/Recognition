@@ -3,11 +3,10 @@ import numpy as np
 os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"
 import pickle
 import torch
-# from cvzone.FaceDetectionModule import FaceDetector
-# from collections import deque
 from threading import Thread
-from time import sleep
-from functools import lru_cache
+from dataQuery import SqlQueries
+# import dataQuery
+
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;udp"
 os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;0"
@@ -16,10 +15,6 @@ import face_recognition
 import cvzone
 import cv2
 
-from PIL import Image
-# from glob import glob
-import glob
-from os import path
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -45,6 +40,9 @@ class Vision:
         self.modeType = 0
         self.counter = 0
         self.id = -1
+        self.result = -1
+        self.num = 0
+        self.empQueu = set() 
     
     def back_box(self):
         # imgBackground = cv2.imread('assets/background.png')
@@ -105,6 +103,7 @@ class Vision:
         cam.set(cv2.CAP_PROP_EXPOSURE, -5)
         
         while True:
+            self.counter = 0
             ret, frame = cam.read()
             img = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
             rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -112,17 +111,17 @@ class Vision:
             
             face_location = face_location = face_recognition.face_locations(rgb_img)
             face_encoding = face_encoding = face_recognition.face_encodings(rgb_img, face_location)
-           
-            self.imgBackground[162:162 + 480, 55:55 + 640] = frame
-            self.imgBackground[44:44 + 633, 808:808 + 414] = self.back_box()[1]
 
-            for face_encode, faceLoc in zip(face_encoding, face_location):                
+            
+            self.imgBackground[162:162 + 480, 55:55 + 640] = frame
+            # self.imgBackground[44:44 + 633, 808:808 + 414] = self.back_box()[self.modeType]
+
+            for face_encode, faceLoc in zip(face_encoding, face_location):
                 matches = face_recognition.compare_faces(known_face_encodings, face_encode)
                 face_distance = face_recognition.face_distance(known_face_encodings, face_encode)
-                # print('matches', matches)
-                # print('face_distance', face_distance)
-                best_match = np.argmin(face_distance)                        
+                best_match = np.argmin(face_distance)
                 if matches[best_match]:
+                    self.empQueu.add(EmployeeIds[best_match])                  
                     y1, x2 ,y2, x1 = faceLoc
                     y1, x2 ,y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 *4
                     bbox = 55 + x1, 162 +y1, x2 - x1, y2 - y1
@@ -131,35 +130,53 @@ class Vision:
                     if self.counter == 0:
                         self.counter = 1
                         self.modeType = 1
-
-                    # print(EmployeeIds[best_match])
-
+                        print('first cond',self.counter)
+                
+            
             if self.counter != 0:
                 if self.counter == 1:
-                    print('id in encounter', self.id)
-                    # imgread = cv2.imread(os.path.join(folderPath, str(id), '.jpg'))
-                    self.imgEmployee = cv2.imread(f'{folderPath}/{self.id}.jpg')
-                    # arr = np.frombuffer(str(iii), np.uint8)
-                    # self.empimg = cv2.imdecode(arr, cv2.COLOR_BGRA2BGR)
+                    query = SqlQueries(self.id)
+                    self.result = query.CheckAttandance()
+                    if self.result == 1:                    
+                        self.imgEmployee = cv2.imread(f'{folderPath}/{self.id}.jpg')
+                        self.modeType = 1
+                        self.imgBackground[44:44 + 633, 808:808 + 414] = self.back_box()[self.modeType]
+                    elif self.result == 3:
+                        self.num +=1
+                        self.imgEmployee = cv2.imread(f'{folderPath}/{self.id}.jpg')
+                        if self.num >= 5:
+                            self.modeType = 2
+                            self.imgBackground[44:44 + 633, 808:808 + 414] = self.back_box()[self.modeType]
 
-                cv2.putText(self.imgBackground, str(self.counter), (861, 125), cv2.FONT_HERSHEY_COMPLEX, 1,(255,255,255),1)
-                cv2.putText(self.imgBackground, str('major'), (1006, 550), cv2.FONT_HERSHEY_COMPLEX, 0.5,(255,255,255),1)
-                cv2.putText(self.imgBackground, str(self.id), (1006, 493), cv2.FONT_HERSHEY_COMPLEX, 0.5,(255,255,255),1)
+                    #-------------------------------------update data of attandance#-------------------------------------
+                if self.result == 1:
+                    cv2.putText(self.imgBackground, str(self.counter), (861, 125), cv2.FONT_HERSHEY_COMPLEX, 1,(10,10,10),1)
+                    cv2.putText(self.imgBackground, str('Role'), (1006, 550), cv2.FONT_HERSHEY_COMPLEX, 0.7(10,10,15),1)
+                    cv2.putText(self.imgBackground, str(self.id), (1006, 493), cv2.FONT_HERSHEY_COMPLEX, 0.7,(10,10,10),1)
 
-                cv2.putText(self.imgBackground, str(self.id), (910, 625), cv2.FONT_HERSHEY_COMPLEX, 0.6,(100,100,100),1)
-                cv2.putText(self.imgBackground, str(self.id), (1025, 625), cv2.FONT_HERSHEY_COMPLEX, 0.6,(100,100,100),1)
-                cv2.putText(self.imgBackground, str(self.id), (1125, 625), cv2.FONT_HERSHEY_COMPLEX, 0.6,(100,100,100),1)
+                    # cv2.putText(self.imgBackground, str(self.id), (910, 625), cv2.FONT_HERSHEY_COMPLEX, 0.6,(100,100,100),1)
+                    # cv2.putText(self.imgBackground, str(self.id), (1025, 625), cv2.FONT_HERSHEY_COMPLEX, 0.6,(100,100,100),1)
+                    # cv2.putText(self.imgBackground, str(self.id), (1125, 625), cv2.FONT_HERSHEY_COMPLEX, 0.6,(100,100,100),1)
 
-                (w, h), _ = cv2.getTextSize(str('salar ghahremani'), cv2.FONT_HERSHEY_COMPLEX, 1, 1)
-                offset = (414-w)//2
-                cv2.putText(self.imgBackground, str('salar ghahremani'), (808+offset, 445), cv2.FONT_HERSHEY_COMPLEX, 0.6,(50,50,50),1)
+                    (w, h), _ = cv2.getTextSize(str('salar ghahremani'), cv2.FONT_HERSHEY_COMPLEX, 1, 1)
+                    offset = (414-w)//2
+                    cv2.putText(self.imgBackground, str('salar ghahremani'), (858+offset, 445), cv2.FONT_HERSHEY_COMPLEX, 0.5,(50,50,50),1)
 
                 self.imgEmployee = cv2.resize(self.imgEmployee, (216, 216), interpolation= cv2.INTER_AREA)
                 self.imgBackground[175:175 + 216, 909:909 + 216] = self.imgEmployee
 
-                self.counter+1
+                # self.counter+1
+            elif self.counter == 0:
+                self.empQueu.clear()
+                # self.imgBackground[175:175 + 216, 909:909 + 216] = self.imgEmployee
+                self.modeType = 4
+                self.imgBackground[44:44 + 633, 808:808 + 414] = self.back_box()[self.modeType]
+                
+                # self.imgBackground = cv2.imread('assets/background.png')
+                # self.imgBackground[175:175 + 216, 909:909 + 216] = None
 
-            print('id out of encounter', self.id) 
+
+            print(self.empQueu)
             cv2.imshow("Real-Time Detection", self.imgBackground)
             # cv2.imshow("Real-Time Detection", frame)
 
@@ -177,4 +194,5 @@ if __name__ == '__main__':
     # vis.start()
     vis.imgsEncoded()
     Thread(target=vis.back_box, daemon=True, args=()).start()
+
     vis.processInputGate()
